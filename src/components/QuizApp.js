@@ -5,7 +5,7 @@ import Modal from './Modal';
 import Results from './Results';
 import shuffleQuestions from '../helpers/shuffleQuestions';
 import QUESTION_DATA from '../data/quiz-data';
-
+import axios from "axios";
 class QuizApp extends Component {
   state = {
     ...this.getInitialState(this.props.totalQuestions)
@@ -14,31 +14,43 @@ class QuizApp extends Component {
   static propTypes = {
     totalQuestions: PropTypes.number.isRequired
   };
-
   getInitialState(totalQuestions) {
-    totalQuestions = Math.min(totalQuestions, QUESTION_DATA.length);
-    const QUESTIONS = shuffleQuestions(QUESTION_DATA).slice(0, totalQuestions);
-
-    return {
-      questions: QUESTIONS,
-      totalQuestions: totalQuestions,
-      userAnswers: QUESTIONS.map(() => {
-        return {
-          tries: 0
-        }
-      }),
-      step: 1,
-      score: 0,
-      modal: {
-        state: 'hide',
-        praise: '',
-        points: ''
-      }
-    };
+    const apiUrl = "http://34.68.254.34:8000/get_mcqs";
+    axios.get(apiUrl,{
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Content-Type": "application/json"}
+    })
+    .then((res) => res.json())
+    .then((res)=> questionJSXgenerator(res))
+    .then((questions) => {
+      const QUESTION_DATA = questions;
+      totalQuestions = Math.min(totalQuestions, QUESTION_DATA.length);
+      const QUESTIONS = shuffleQuestions(QUESTION_DATA).slice(0, totalQuestions);
+      this.setState({
+          questions: QUESTIONS,
+          totalQuestions: totalQuestions,
+          userAnswers: QUESTIONS.map(() => {
+            return {
+              tries: 0
+            }
+          }),
+          step: 1,
+          score: 0,
+          modal: {
+            state: 'hide',
+            praise: '',
+            points: ''
+          }
+        })
+    }).catch((e) =>{
+      console.log(e);
+    });
   }
 
   handleAnswerClick = (index) => (e) => {
     const { questions, step, userAnswers } = this.state;
+    console.log(questions, step, userAnswers);
     const isCorrect = questions[0].correct === index;
     const currentStep = step - 1;
     const tries = userAnswers[currentStep].tries;
