@@ -1,89 +1,103 @@
-import React, { Fragment, Component } from 'react';
-import PropTypes from 'prop-types';
-import Quiz from './Quiz';
-import Modal from './Modal';
-import Results from './Results';
-import shuffleQuestions from '../helpers/shuffleQuestions';
-import QUESTION_DATA from '../data/quiz-data';
+import React, { Fragment, Component } from "react";
+import PropTypes from "prop-types";
+import Quiz from "./Quiz";
+import Modal from "./Modal";
+import Results from "./Results";
+import shuffleQuestions from "../helpers/shuffleQuestions";
+import questionJSXgenerator from "../data/quiz-data";
+import regeneratorRuntime from "regenerator-runtime";
+import MCQUESTION from "../data/quiz-qsns";
 import axios from "axios";
 class QuizApp extends Component {
+  
   state = {
-    ...this.getInitialState(this.props.totalQuestions)
-  };
+
+    questions: MCQUESTION,
+    totalQuestions: 2,
+    userAnswers: MCQUESTION.map(() => {
+      return {
+        tries: 0,
+      };
+    }),
+    step: 1,
+    score: 0,
+    modal: {
+      state: "hide",
+      praise: "",
+      points: "",
+    }
+  }
+
+  async componentDidMount() {
+    try {
+      const apiUrl = "http://localhost:8080/get_mcqs";
+      let mcqs = await axios.get(apiUrl);
+      mcqs = await questionJSXgenerator(mcqs.data);
+      const QUESTION_DATA = mcqs;
+      const totalQuestions = Math.min(10, QUESTION_DATA.length);
+      const QUESTIONS = shuffleQuestions(QUESTION_DATA).slice(
+        0,
+        totalQuestions
+      );
+      this.setState({
+        questions: QUESTIONS,
+        totalQuestions: totalQuestions,
+        userAnswers: QUESTIONS.map(() => {
+          return {
+            tries: 0,
+          };
+        }),
+        step: 1,
+        score: 0,
+        modal: {
+          state: "hide",
+          praise: "",
+          points: "",
+        },
+      });
+
+    } catch(err) {
+      console.log(err);
+    }
+  }
 
   static propTypes = {
-    totalQuestions: PropTypes.number.isRequired
+    totalQuestions: PropTypes.number.isRequired,
   };
-  getInitialState(totalQuestions) {
-    const apiUrl = "http://34.68.254.34:8000/get_mcqs";
-    axios.get(apiUrl,{
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Content-Type": "application/json"}
-    })
-    .then((res) => res.json())
-    .then((res)=> questionJSXgenerator(res))
-    .then((questions) => {
-      const QUESTION_DATA = questions;
-      totalQuestions = Math.min(totalQuestions, QUESTION_DATA.length);
-      const QUESTIONS = shuffleQuestions(QUESTION_DATA).slice(0, totalQuestions);
-      this.setState({
-          questions: QUESTIONS,
-          totalQuestions: totalQuestions,
-          userAnswers: QUESTIONS.map(() => {
-            return {
-              tries: 0
-            }
-          }),
-          step: 1,
-          score: 0,
-          modal: {
-            state: 'hide',
-            praise: '',
-            points: ''
-          }
-        })
-    }).catch((e) =>{
-      console.log(e);
-    });
-  }
+  
 
   handleAnswerClick = (index) => (e) => {
     const { questions, step, userAnswers } = this.state;
-    console.log(questions, step, userAnswers);
     const isCorrect = questions[0].correct === index;
     const currentStep = step - 1;
     const tries = userAnswers[currentStep].tries;
 
-    if (isCorrect && e.target.nodeName === 'LI') {
+    if (isCorrect && e.target.nodeName === "LI") {
       // Prevent other answers from being clicked after correct answer is clicked
-      e.target.parentNode.style.pointerEvents = 'none';
+      e.target.parentNode.style.pointerEvents = "none";
 
-      e.target.classList.add('right');
+      e.target.classList.add("right");
 
       userAnswers[currentStep] = {
-        tries: tries + 1
+        tries: tries + 1,
       };
 
       this.setState({
-        userAnswers: userAnswers
+        userAnswers: userAnswers,
       });
 
       setTimeout(() => this.showModal(tries), 750);
-
       setTimeout(this.nextStep, 2750);
-    }
-
-    else if (e.target.nodeName === 'LI') {
-      e.target.style.pointerEvents = 'none';
-      e.target.classList.add('wrong');
+    } else if (e.target.nodeName === "LI") {
+      e.target.style.pointerEvents = "none";
+      e.target.classList.add("wrong");
 
       userAnswers[currentStep] = {
-        tries: tries + 1
+        tries: tries + 1,
       };
 
       this.setState({
-        userAnswers: userAnswers
+        userAnswers: userAnswers,
       });
     }
   };
@@ -100,32 +114,32 @@ class QuizApp extends Component {
 
     switch (tries) {
       case 0: {
-        praise = '1st Try!';
-        points = '+10';
+        praise = "1st Try!";
+        points = "+10";
         break;
       }
       case 1: {
-        praise = '2nd Try!';
-        points = '+5';
+        praise = "2nd Try!";
+        points = "+5";
         break;
       }
       case 2: {
-        praise = 'Correct!';
-        points = '+2';
+        praise = "Correct!";
+        points = "+2";
         break;
       }
       default: {
-        praise = 'Correct!';
-        points = '+1';
+        praise = "Correct!";
+        points = "+1";
       }
     }
 
     this.setState({
       modal: {
-        state: 'show',
+        state: "show",
         praise,
-        points
-      }
+        points,
+      },
     });
   };
 
@@ -140,28 +154,39 @@ class QuizApp extends Component {
       score: this.updateScore(tries, score),
       questions: restOfQuestions,
       modal: {
-        state: 'hide'
-      }
+        state: "hide",
+      },
     });
   };
 
   updateScore(tries, score) {
     switch (tries) {
-      case 1: return score + 10;
-      case 2: return score + 5;
-      case 3: return score + 2;
-      default: return score + 1;
+      case 1:
+        return score + 10;
+      case 2:
+        return score + 5;
+      case 3:
+        return score + 2;
+      default:
+        return score + 1;
     }
   }
 
   restartQuiz = () => {
-    this.setState({
-      ...this.getInitialState(this.props.totalQuestions)
+    this.setState ({
+      name: "saikiran"
     });
   };
 
   render() {
-    const { step, questions, userAnswers, totalQuestions, score, modal } = this.state;
+    const {
+      step,
+      questions,
+      userAnswers,
+      totalQuestions,
+      score,
+      modal,
+    } = this.state;
 
     if (step >= totalQuestions + 1) {
       return (
@@ -171,19 +196,20 @@ class QuizApp extends Component {
           userAnswers={userAnswers}
         />
       );
-    } else return (
-      <Fragment>
-        <Quiz
-          step={step}
-          questions={questions}
-          totalQuestions={totalQuestions}
-          score={score}
-          handleAnswerClick={this.handleAnswerClick}
-          handleEnterPress={this.handleEnterPress}
-        />
-        { modal.state === 'show' && <Modal modal={modal} /> }
-      </Fragment>
-    );
+    } else
+      return (
+        <Fragment>
+          <Quiz
+            step={step}
+            questions={questions}
+            totalQuestions={totalQuestions}
+            score={score}
+            handleAnswerClick={this.handleAnswerClick}
+            handleEnterPress={this.handleEnterPress}
+          />
+          {modal.state === "show" && <Modal modal={modal} />}
+        </Fragment>
+      );
   }
 }
 

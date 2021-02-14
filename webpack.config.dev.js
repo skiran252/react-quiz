@@ -41,7 +41,8 @@ module.exports = {
 	},
 	devServer: {
 		contentBase: './dist',
-		hot: true
+		hot: true,
+    	proxy: { "/get_mcqs": { target: 'http://34.68.254.34:8000', secure: false }  }
 	},
 	plugins: [
 		new webpack.HotModuleReplacementPlugin(),
