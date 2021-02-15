@@ -11,15 +11,14 @@ import axios from "axios";
 class QuizApp extends Component {
   
   state = {
-
     questions: MCQUESTION,
-    totalQuestions: 2,
+    totalQuestions: 0,
     userAnswers: MCQUESTION.map(() => {
       return {
         tries: 0,
       };
     }),
-    step: 1,
+    step: 0,
     score: 0,
     modal: {
       state: "hide",
@@ -39,6 +38,7 @@ class QuizApp extends Component {
         0,
         totalQuestions
       );
+      console.log(QUESTIONS);
       this.setState({
         questions: QUESTIONS,
         totalQuestions: totalQuestions,
@@ -173,9 +173,10 @@ class QuizApp extends Component {
   }
 
   restartQuiz = () => {
-    this.setState ({
-      name: "saikiran"
-    });
+    window.location.reload(false);
+    // this.setState ({
+    //   name: "saikiran"
+    // });
   };
 
   render() {

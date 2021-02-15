@@ -97,7 +97,7 @@ var questionJSXgenerator = function (questions) {
         <span>{question.answers[2]}</span>,
         <span>{question.answers[3]}</span>,
       ],
-      correct: question.correct,
+      correct: question.correct-1,
     };
     outputs.push(q);
     }
